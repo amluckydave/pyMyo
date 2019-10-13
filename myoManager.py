@@ -1,0 +1,73 @@
+import myo
+from myo import *
+from PyQt5.QtCore import QThread, pyqtSignal, QTimer
+
+
+class Listener(DeviceListener):
+    def __init__(self, m):
+        super().__init__()
+        self.manager = m
+        self.emg = []
+        self.data = {}
+
+    def on_connected(self, event: Event):
+        self.manager.connecting = False
+        self.manager.connected = True
+        event.device.stream_emg(True)
+        event.device.vibrate(myo.VibrationType.short)
+
+        self.manager.signals.emit({"type": event.type,
+                                   "data": {"name": event.device_name, "mac_address": event.mac_address,
+                                            "firmware_version": event.firmware_version}})
+
+    def on_disconnected(self, event: Event):
+        self.manager.signals.emit({"type": event.type, "data": {}})
+        self.manager.connected = False
+
+    def on_emg(self, event: Event):
+        self.emg = event.emg
+        self.manager.signals.emit({"type": event.type, "emg": self.emg})
+
+
+class MyoManager(QThread):
+    signals = pyqtSignal(dict)
+    send = None
+    connecting = False
+    connected = False
+
+    def __init__(self, sender):
+        super().__init__()
+        self.send = sender
+        self.signals.connect(sender.callback)
+        myo.init(sdk_path=r'C:\myo-sdk-win-0.9.0')
+        # myo.init()
+
+    def timed_out(self):
+        if (not self.connected) and self.connecting:
+            self.disconnect()
+
+    def connect(self):
+        if not self.connected and not self.connecting:
+            self.connecting = True
+            self.stop = False
+            QTimer.singleShot(5000, self.timed_out)  # Let's wait for 5 seconds
+            self.start()
+
+    def run(self):
+        try:
+            self.listener = Listener(self)
+            hub = myo.Hub("com.twins.emgdataset")
+
+            while hub.run(self.listener.on_event, 1):
+                if self.stop:
+                    self.stop = False
+                    break
+        except:
+            self.connecting = False
+
+    def disconnect(self):
+        if self.connected:
+            self.signals.emit({"type": EventType.disconnected, "data": {}})
+        self.connecting = False
+        self.connected = False
+        self.stop = True

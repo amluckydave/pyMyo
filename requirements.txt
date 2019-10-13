@@ -1,0 +1,12 @@
+# pip install -r requirements.txt
+# pyinstaller -F -w -i logo.ico linkSHU_(alpha).py
+# pyinstaller -F -w new_Main.py
+
+PyQt5==5.13.0
+pyinstaller
+PyQt5-stubs
+pyqtgraph
+numpy
+cffi
+six
+py2exe
