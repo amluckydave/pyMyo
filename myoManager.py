@@ -13,20 +13,35 @@ class Listener(DeviceListener):
     def on_connected(self, event: Event):
         self.manager.connecting = False
         self.manager.connected = True
+
+        event.device.request_battery_level()
+        event.device.request_rssi()
+
         event.device.stream_emg(True)
         event.device.vibrate(myo.VibrationType.short)
 
         self.manager.signals.emit({"type": event.type,
-                                   "data": {"name": event.device_name, "mac_address": event.mac_address,
-                                            "firmware_version": event.firmware_version}})
+                                   "data": {"name": event.device_name,
+                                            "mac_address": event.mac_address}})
 
     def on_disconnected(self, event: Event):
-        self.manager.signals.emit({"type": event.type, "data": {}})
+        self.manager.signals.emit({"type": event.type,
+                                   "data": {"timeout": "",
+                                            "unOpenMyo": ""}})
         self.manager.connected = False
 
     def on_emg(self, event: Event):
         self.emg = event.emg
-        self.manager.signals.emit({"type": event.type, "emg": self.emg})
+        self.manager.signals.emit({"type": event.type,
+                                   "data": {"emg": event.emg}})
+
+    def on_battery_level(self, event):
+        self.manager.signals.emit({"type": event.type,
+                                   "data": {"battery": event.battery_level}})
+
+    def on_rssi(self, event):
+        self.manager.signals.emit({"type": event.type,
+                                   "data": {"rssi": event.rssi}})
 
 
 class MyoManager(QThread):
@@ -44,13 +59,16 @@ class MyoManager(QThread):
 
     def timed_out(self):
         if (not self.connected) and self.connecting:
+            self.signals.emit({"type": EventType.disconnected,
+                               "data": {"timeout": "timeout",
+                                        "unOpenMyo": ""}})
             self.disconnect()
 
     def connect(self):
         if not self.connected and not self.connecting:
             self.connecting = True
             self.stop = False
-            QTimer.singleShot(5000, self.timed_out)  # Let's wait for 5 seconds
+            QTimer.singleShot(5000, self.timed_out)
             self.start()
 
     def run(self):
@@ -58,16 +76,21 @@ class MyoManager(QThread):
             self.listener = Listener(self)
             hub = myo.Hub("com.twins.emgdataset")
 
-            while hub.run(self.listener.on_event, 1):
+            while hub.run(self.listener.on_event, 500):
                 if self.stop:
                     self.stop = False
                     break
         except:
+            self.signals.emit({"type": EventType.disconnected,
+                               "data": {"timeout": "",
+                                        "unOpenMyo": "unOpenMyo"}})
             self.connecting = False
 
     def disconnect(self):
         if self.connected:
-            self.signals.emit({"type": EventType.disconnected, "data": {}})
+            self.signals.emit({"type": EventType.disconnected,
+                               "data": {"timeout": "",
+                                        "unOpenMyo": ""}})
         self.connecting = False
         self.connected = False
         self.stop = True
