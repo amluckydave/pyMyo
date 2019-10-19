@@ -86,6 +86,11 @@ class Win(QWidget):
         self.ui.disConnectBtn.clicked.connect(self.disconnection)
         self.ui.chooseDir.clicked.connect(self.chooseDir)
 
+        self.ui.connectBtn.setEnabled(True)
+        self.ui.disConnectBtn.setEnabled(False)
+        self.ui.startBtn.setEnabled(False)
+        self.ui.saveBtn.setEnabled(False)
+
         self.ui.label.setText("<A href='https://github.com/Holaplace/pyMyo'>Check for Update</a>")
         self.ui.label.setOpenExternalLinks(True)
 
@@ -93,11 +98,6 @@ class Win(QWidget):
         self.ui.chooseDir.setEnabled(False)
         self.ui.Gesture.setEnabled(False)
         self.ui.Times.setEnabled(False)
-
-        self.ui.connectBtn.setEnabled(False)
-        self.ui.disConnectBtn.setEnabled(True)
-        self.ui.startBtn.setEnabled(True)
-        self.ui.saveBtn.setEnabled(False)
 
         self.ui.msgBrowser.append("Trying to connect to Myo (connection will timeout in 5 seconds)." + '\n')
         if not self.myo:
@@ -161,12 +161,19 @@ class Win(QWidget):
                                       + repr(dataEvt["mac_address"])
                                       + '. \n')
 
+            self.ui.connectBtn.setEnabled(False)
+            self.ui.disConnectBtn.setEnabled(True)
+            self.ui.startBtn.setEnabled(True)
+            self.ui.saveBtn.setEnabled(False)
+
         elif typeEvt == EventType.disconnected:
             if dataEvt["timeout"]:
                 self.ui.msgBrowser.append("Connection timed out!" + '\n')
+                self.disconnection()
 
             if dataEvt["unOpenMyo"]:
                 self.ui.msgBrowser.append("Unable to connect to Myo Connect. Is Myo Connect running?" + '\n')
+                self.disconnection()
 
         elif typeEvt == EventType.emg:
             self.emg_data_queue.append(dataEvt["emg"])
@@ -220,7 +227,7 @@ class Win(QWidget):
             newCount += 1
             if newCount > gesTime:
                 newCount = 1
-                self.disconnection()
+                QTimer.singleShot(500, self.disconnection)
             QTimer.singleShot(500, self.start)
 
     def timer_start(self):
