@@ -7,10 +7,9 @@ class Listener(DeviceListener):
     def __init__(self, m):
         super().__init__()
         self.manager = m
-        self.emg = []
         self.data = {}
 
-    def on_connected(self, event: Event):
+    def on_connected(self, event):
         self.manager.connecting = False
         self.manager.connected = True
 
@@ -24,16 +23,21 @@ class Listener(DeviceListener):
                                    "data": {"name": event.device_name,
                                             "mac_address": event.mac_address}})
 
-    def on_disconnected(self, event: Event):
+    def on_disconnected(self, event):
         self.manager.signals.emit({"type": event.type,
                                    "data": {"timeout": "",
                                             "unOpenMyo": ""}})
         self.manager.connected = False
 
-    def on_emg(self, event: Event):
-        self.emg = event.emg
+    def on_emg(self, event):
         self.manager.signals.emit({"type": event.type,
                                    "data": {"emg": event.emg}})
+
+    def on_orientation(self, event):
+        self.manager.signals.emit({"type": event.type,
+                                   "data": {"gyroscope": event.gyroscope,
+                                            "acceleration": event.acceleration,
+                                            "orientation": event.orientation}})
 
     def on_battery_level(self, event):
         self.manager.signals.emit({"type": event.type,
@@ -55,7 +59,6 @@ class MyoManager(QThread):
         self.send = sender
         self.signals.connect(sender.callback)
         myo.init(sdk_path=r'C:\myo-sdk-win-0.9.0')
-        # myo.init()
 
     def timed_out(self):
         if (not self.connected) and self.connecting:
@@ -74,7 +77,7 @@ class MyoManager(QThread):
     def run(self):
         try:
             self.listener = Listener(self)
-            hub = myo.Hub("com.twins.emgdataset")
+            hub = myo.Hub("com.twins.dataset")
 
             while hub.run(self.listener.on_event, 500):
                 if self.stop:
