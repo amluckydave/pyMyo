@@ -1,8 +1,3 @@
-import sys, os
-
-if hasattr(sys, 'frozen'):
-    os.environ['PATH'] = sys._MEIPASS + ";" + os.environ['PATH']
-
 from collections import deque
 import numpy as np
 from PyQt5.QtWidgets import QWidget, QMessageBox, QFileDialog

@@ -1,3 +1,7 @@
+import sys, os
+if hasattr(sys, 'frozen'):
+    os.environ['PATH'] = sys._MEIPASS + ";" + os.environ['PATH']
+
 from PyQt5.QtWidgets import QApplication
 from pyMyoMain import *
 
