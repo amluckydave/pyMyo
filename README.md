@@ -1,1 +1,1 @@
-# pyMyo
+# <p align="center">pyMyo</p>
