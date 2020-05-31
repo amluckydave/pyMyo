@@ -13,7 +13,13 @@
 
 ## :building_construction: Introduction
 
-GO MYO: Online Training & Predicting Hand Gestures.
+pyMYO: Online Data Collector from Myo-armband on Real Time. 
+
+This project has been released 5 versions. You can submit "issues" to improve this project.
+
+Thanks in advance.
 
 Designed By @[Holaplace](https://github.com/Holaplace)
 <br />
+
+<img src="https://github.com/Holaplace/pyMyo/blob/master/pyMyo.png">
